@@ -1,0 +1,6 @@
+[
+{"geo_Location": "", "sub_location": null, "location": "Select from list", "id": 1},
+{"geo_Location": "latitude:'24.891224',longitude:'66.988458'", "sub_location": null, "location": "Abdullah Ahmed Road", "id": 2},
+{"geo_Location": "latitude:'24.848067',longitude:'67.031176'", "sub_location": [{"locationId": 3, "name": "Any", "geo_subLocation": "latitude:'24.848067',longitude:'67.031176'"}, {"locationId": 3, "name": "Frere Excellency", "geo_subLocation": "latitude:'24.848067',longitude:'67.031176'"}], "location": "Abdullah Haroon Road", "id": 3},
+{"geo_Location": "latitude:'24.924261',longitude:'67.082495'", "sub_location": null, "location": "Abid Town", "id": 4}
+]

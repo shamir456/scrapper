@@ -7,6 +7,8 @@ import scrapy
 # from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
+import json
+import requests
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
@@ -36,7 +38,7 @@ class SeleniumScrapperSpider(scrapy.Spider):
 
 
     def parse(self, response):
-    	arr=['Lahore']
+    	arr=['Karachi']
     	time.sleep(5)
 
     	all_iframes = self.driver.find_elements_by_tag_name("iframe")
@@ -64,8 +66,12 @@ class SeleniumScrapperSpider(scrapy.Spider):
 	        time.sleep(4)
 	        sel = scrapy.Selector(text=self.driver.page_source)
 	        location=sel.xpath('//*[@id="_cat_selector_3"]/option/text()').extract()
+
+	        ids=sel.xpath('//*[@id="_cat_selector_3"]/option/@value').extract()
+	        print(ids)
 	        print(location)
-	        location=zip(location)
+	        yield location
+	        location=zip(location,ids)
 	        city={
 	        a:[]
 
@@ -73,103 +79,92 @@ class SeleniumScrapperSpider(scrapy.Spider):
 	        i=1
 	        
 
-	        for x in location[510:]:
+	        for x in location:
 	        	array=[]
 	        	# Area={
 	        	#  'location':x[0],
 	        	#  'id':i,
 	        	#  'sub_location': None
 	        	# }
-	        	time.sleep(2)
+	        	#time.sleep(2)
 	        	#yield Area
 	        	
 
+	        	time.sleep(4)
 	        	select = Select(self.driver.find_element_by_name('_cat_selector_3'))
 	        	select.select_by_visible_text(x[0])
-	        	print('Setting Location')
-	        	time.sleep(3)
+	        	# print('Setting Location')
+	        	# time.sleep(3)
 	        	sel = scrapy.Selector(text=self.driver.page_source)
-	        	geo_Location=sel.xpath('//*[@id="map_field"]/@value').extract()
-	        	print('Location geo_Location',geo_Location)
-	        	time.sleep(2)
+	        	# geo_Location=sel.xpath('//*[@id="map_field"]/@value').extract()
+	        	response = requests.get('https://www.zameen.com/v3/index.php?t=ajax&c=get_cat_info&cat_id='+x[1]+'&mylatitude=&mylongitude=&cat_id='+x[1]+'&mylatitude=&mylongitude=&bc_from=3&v=1')
+
+	        	
+	        	geo_L=response.text.replace('\n\t\t','')
+	        	g=geo_L.replace('\n\t','')
+	        	print(g.split(':'))
+	        	geo_Location=g.split(',')
+	        	loc=[]
+	        	if len(geo_Location) > 1:
+	        		loc=[geo_Location[2].replace("",''),geo_Location[3].replace("",'')]
+	        		
+
 	        	
 	        	Area={
 	        	 'location':x[0],
 	        	 'id':i,
 	        	 'sub_location': None,
-	        	 'geo_Location':geo_Location
+	        	 'geo_Location':loc
 	        	}
 	        	i=i+1
 	        	print(Area)
 	        	#yield Area
 	        	print(i)
-
-
-
-	        	
-
+	        	time.sleep(3)
 	        	if sel.xpath('//*[@id="_cat_selector_4"]/option/text()') :
 
 
 	        		sub_location=sel.xpath('//*[@id="_cat_selector_4"]/option/text()').extract()
+	        		sub_ids=sel.xpath('//*[@id="_cat_selector_3"]/option/@value').extract()
+	        		sub_location=zip(sub_location,sub_ids)
+
 	        		print(sub_location)
-	        		self.driver.refresh()
-	        		self.driver.get(response.url)
-	        		time.sleep(6)
-	        		self.driver.execute_script("return document.getElementById('city').setAttribute('style', 'display:inline-block;');")
-	        		select = Select(self.driver.find_element_by_name('city'))
-	        		select.select_by_visible_text(a)
-	        		time.sleep(4)
-	        		select = Select(self.driver.find_element_by_name('_cat_selector_3'))
-	        		select.select_by_visible_text(x[0])
-	        		time.sleep(3)
+	        		
 
-
-	        		j=1
 
 	        		for sub in sub_location:
 	        			#time.sleep(3)
-	        			print(sub.strip())
-	        			time.sleep(1)
+	        			print(sub[0].strip())
+	        			response = requests.get('https://www.zameen.com/v3/index.php?t=ajax&c=get_cat_info&cat_id='+sub[1]+'&mylatitude=&mylongitude=&cat_id='+sub[1]+'&mylatitude=&mylongitude=&bc_from=3&v=1')
 
-	        			select = Select(self.driver.find_element_by_name('_cat_selector_4'))
-	        			select.select_by_visible_text(sub.strip())
-	        			time.sleep(5)
-	        			page_source = scrapy.Selector(text=self.driver.page_source)
+	        			# select = Select(self.driver.find_element_by_name('_cat_selector_4'))
+	        			# select.select_by_visible_text(sub.strip())
+	        			# time.sleep(5)
+	        			# page_source = scrapy.Selector(text=self.driver.page_source)
 
 	        			
-	        			geo_subLocation=page_source.xpath('//*[@id="map_field"]/@value').extract()
-	        			print('Geo Sub Location Field',geo_subLocation)
+	        			#geo_subLocation=page_source.xpath('//*[@id="map_field"]/@value').extract()
+	        			#print('Geo Sub Location Field',geo_subLocation)
 	        			print('Setting SubLocation')
+	        			sub_geo_L=response.text.replace('\n\t\t','')
+			        	s=sub_geo_L.replace('\n\t','').strip()
+			        	sub_geo_Location=g.split(',')
+			        	sub_loc=[]
+			        	if len(sub_geo_Location)>1:
+			        		sub_loc=[geo_Location[2].replace("",''),geo_Location[3].replace("",'')]
+
+			        		
+			        	
+
 	        			scraped_info={
 				    	
-				    	'name':sub,
+				    	'name':sub[0],
 				    	'locationId':Area["id"],
-				    	'geo_subLocation':geo_subLocation
-
+				    	'geo_subLocation':sub_loc
 				    	}
 				    	array.append(scraped_info)
 
-				    	print(j)
-
-				    	# if j%3==0:
-			      #   		self.driver.refresh()
-			      #   		self.driver.get(response.url)
-				     #    	time.sleep(6)
-				     #    	self.driver.execute_script("return document.getElementById('city').setAttribute('style', 'display:inline-block;');")
-				     #    	select = Select(self.driver.find_element_by_name('city'))
-
-					    #     select.select_by_visible_text(a)
-					    #     time.sleep(4)
-					    #     select = Select(self.driver.find_element_by_name('_cat_selector_3'))
-	        # 				select.select_by_visible_text(x[0])
-	        # 				time.sleep(3)
-	        	
-					    #     sel = scrapy.Selector(text=self.driver.page_source)
-
-				    	j=j+1
-				    	print('After append')
-
+				    	
 				    	#yield scraped_info
 	        		Area['sub_location']=array
 
